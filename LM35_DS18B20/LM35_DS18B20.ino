@@ -28,9 +28,9 @@ void loop() {
   ds18b20_temp = sensors.getTempCByIndex(0);
   
   Serial.print(lm35_temperature);
-  Serial.println(" ");
+  Serial.print(" ");
   Serial.print(ds18b20_temp);
-  Serial.println(" ");
+  Serial.print(" ");
   delay(1000);
 
 }

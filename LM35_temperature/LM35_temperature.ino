@@ -18,9 +18,10 @@ void loop() {
   //0.00488125=5/1024，0~5V对应模拟口读数1~1024，每10毫伏对应1℃
   temperature = ((value * 5.0 * 100)/1024);
   
-  Serial.print("Temper =  ");
+  //Serial.print("Temper =  ");
   Serial.print(temperature);
-  Serial.println("℃");
-  delay(500);
+  Serial.print(" ");
+ // Serial.println("℃");
+  delay(1000);
 
 }
