@@ -33,7 +33,7 @@ void setup() {
 void loop() {
 
   sensors.requestTemperatures(); // 发送命令获取温度
-  ds18b20_temp = sensors.getTempCByIndex(0)-1;
+  ds18b20_temp = sensors.getTempCByIndex(0)+2.4;
 
   Filter_Value = Filter();       // 获得滤波器输出值
   Serial.print((Get_AD())/10); // 串口输出
@@ -47,17 +47,30 @@ void loop() {
  
 // 用于随机产生一个300左右的当前值
 float Get_AD() {
-  return ((random(10, 20))+195-(random(10, 20)));
+  return ((random(10, 17))+195-(random(10, 17)));
 }
  
 // 算术平均滤波法
+//#define FILTER_N 12
+//float Filter() {
+//  int i;
+//  float filter_sum = 0;
+//  for(i = 0; i < FILTER_N; i++) {
+//    filter_sum += (Get_AD())/10;
+//    delay(1);
+//  }
+//  return (float)(filter_sum / FILTER_N);
+//}
+
 #define FILTER_N 12
+int filter_buf[FILTER_N + 1];
 float Filter() {
   int i;
   float filter_sum = 0;
+  filter_buf[FILTER_N] = Get_AD()/10;
   for(i = 0; i < FILTER_N; i++) {
-    filter_sum += (Get_AD())/10;
-    delay(1);
+    filter_buf[i] = filter_buf[i + 1]; // 所有数据左移，低位仍掉
+    filter_sum += filter_buf[i];
   }
   return (float)(filter_sum / FILTER_N);
 }
