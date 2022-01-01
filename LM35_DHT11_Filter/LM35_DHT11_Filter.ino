@@ -2,37 +2,39 @@
  * LM35
  * 模拟温度传感器LM35测试
  */
+
+float Filter_Value;
 int potPin = A0;
 float temperature = 0;
 long value = 0;
-float Filter_Value;
 
-float ds18b20_temp = 0;
-#include <OneWire.h>
-#include <DallasTemperature.h>
-#define ONE_WIRE_BUS 2
-OneWire oneWire(ONE_WIRE_BUS);
-DallasTemperature sensors(&oneWire);
+//DHT11
+#include "DHT.h"
 
+#define DHTPIN  2
+#define DHTTYPE DHT11
+
+DHT dht(DHTPIN, DHTTYPE);
 
 void setup() {
   Serial.begin(9600); //设置串口波特率9600
-  sensors.begin();
+  dht.begin();
 }
 
 void loop() {
-  value = analogRead(potPin); 
-  //0.00488125=5/1024，0~5V对应模拟口读数1~1024，每10毫伏对应1℃
-  temperature = ((value * 5.0 * 100)/1024);
+  value = analogRead(potPin); //读取模拟输入
 
-  sensors.requestTemperatures(); // 发送命令获取温度
-  ds18b20_temp = sensors.getTempCByIndex(0);
+  //电压与摄氏度转换：
+  //0.00488125=5/1024，0~5V对应模拟口读数1~1024，每10毫伏对应1℃
+  temperature = (value * 0.0048828125 * 100);
+  float h = dht.readHumidity();//读湿度
+  float t = dht.readTemperature();//读温度(摄氏度)
   
   Filter_Value = Filter();       // 获得滤波器输出值
   
   Serial.print(temperature);
   Serial.print(",");
-  Serial.print(ds18b20_temp);
+  Serial.print(t);
   Serial.print(",");
   Serial.print(Filter_Value); // 串口输出
   Serial.println(",");
@@ -68,27 +70,27 @@ float Get_AD() {
 //  return filter_sum / (FILTER_N - 2);
 //}
 
-// 中位值滤波法
-#define FILTER_N 12
-float Filter() {
-  int filter_buf[FILTER_N];
-  int i, j;
-  float filter_temp;
-  for(i = 0; i < FILTER_N; i++) {
-    filter_buf[i] = Get_AD();
-  }
-  // 采样值从小到大排列（冒泡法）
-  for(j = 0; j < FILTER_N - 1; j++) {
-    for(i = 0; i < FILTER_N - 1 - j; i++) {
-      if(filter_buf[i] > filter_buf[i + 1]) {
-        filter_temp = filter_buf[i];
-        filter_buf[i] = filter_buf[i + 1];
-        filter_buf[i + 1] = filter_temp;
-      }
-    }
-  }
-  return filter_buf[(FILTER_N - 1) / 2];
-}
+//// 中位值滤波法
+//#define FILTER_N 12
+//float Filter() {
+//  int filter_buf[FILTER_N];
+//  int i, j;
+//  float filter_temp;
+//  for(i = 0; i < FILTER_N; i++) {
+//    filter_buf[i] = Get_AD();
+//  }
+//  // 采样值从小到大排列（冒泡法）
+//  for(j = 0; j < FILTER_N - 1; j++) {
+//    for(i = 0; i < FILTER_N - 1 - j; i++) {
+//      if(filter_buf[i] > filter_buf[i + 1]) {
+//        filter_temp = filter_buf[i];
+//        filter_buf[i] = filter_buf[i + 1];
+//        filter_buf[i + 1] = filter_temp;
+//      }
+//    }
+//  }
+//  return filter_buf[(FILTER_N - 1) / 2];
+//}
 
 ////算术平均滤波法
 //#define FILTER_N 12
@@ -102,17 +104,17 @@ float Filter() {
 //  return (float)(filter_sum / FILTER_N);
 //}
 
-////递推平均滤波法（又称滑动平均滤波法）
-//
-//#define FILTER_N 12
-//int filter_buf[FILTER_N + 1];
-//float Filter() {
-//  int i;
-//  float filter_sum = 0;
-//  filter_buf[FILTER_N] = Get_AD();
-//  for(i = 0; i < FILTER_N; i++) {
-//    filter_buf[i] = filter_buf[i + 1]; // 所有数据左移，低位仍掉
-//    filter_sum += filter_buf[i];
-//  }
-//  return (float)(filter_sum / FILTER_N);
-//}
+//递推平均滤波法（又称滑动平均滤波法）
+
+#define FILTER_N 12
+int filter_buf[FILTER_N + 1];
+float Filter() {
+  int i;
+  float filter_sum = 0;
+  filter_buf[FILTER_N] = Get_AD();
+  for(i = 0; i < FILTER_N; i++) {
+    filter_buf[i] = filter_buf[i + 1]; // 所有数据左移，低位仍掉
+    filter_sum += filter_buf[i];
+  }
+  return (float)(filter_sum / FILTER_N);
+}
