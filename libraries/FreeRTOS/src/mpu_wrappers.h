@@ -1,5 +1,5 @@
 /*
- * FreeRTOS Kernel V10.4.6
+ * FreeRTOS Kernel V10.5.0
  * Copyright (C) 2021 Amazon.com, Inc. or its affiliates.  All Rights Reserved.
  *
  * SPDX-License-Identifier: MIT
@@ -46,7 +46,7 @@
  * privileges.
  */
 
-/* Map standard tasks.h API functions to the MPU equivalents. */
+/* Map standard task.h API functions to the MPU equivalents. */
         #define xTaskCreate                            MPU_xTaskCreate
         #define xTaskCreateStatic                      MPU_xTaskCreateStatic
         #define vTaskDelete                            MPU_vTaskDelete
@@ -120,13 +120,10 @@
         #endif
 
 /* Map standard timer.h API functions to the MPU equivalents. */
-        #define xTimerCreate                           MPU_xTimerCreate
-        #define xTimerCreateStatic                     MPU_xTimerCreateStatic
         #define pvTimerGetTimerID                      MPU_pvTimerGetTimerID
         #define vTimerSetTimerID                       MPU_vTimerSetTimerID
         #define xTimerIsTimerActive                    MPU_xTimerIsTimerActive
         #define xTimerGetTimerDaemonTaskHandle         MPU_xTimerGetTimerDaemonTaskHandle
-        #define xTimerPendFunctionCall                 MPU_xTimerPendFunctionCall
         #define pcTimerGetName                         MPU_pcTimerGetName
         #define vTimerSetReloadMode                    MPU_vTimerSetReloadMode
         #define uxTimerGetReloadMode                   MPU_uxTimerGetReloadMode
@@ -163,15 +160,15 @@
  * macro so applications can place data in privileged access sections
  * (useful when using statically allocated objects). */
         #define PRIVILEGED_FUNCTION
-        #define PRIVILEGED_DATA    __attribute__( ( section( "privileged_data" ) ) )
+        #define PRIVILEGED_DATA    __attribute__ ((section( "privileged_data" )))
         #define FREERTOS_SYSTEM_CALL
 
     #else /* MPU_WRAPPERS_INCLUDED_FROM_API_FILE */
 
 /* Ensure API functions go in the privileged execution section. */
-        #define PRIVILEGED_FUNCTION     __attribute__( ( section( "privileged_functions" ) ) )
-        #define PRIVILEGED_DATA         __attribute__( ( section( "privileged_data" ) ) )
-        #define FREERTOS_SYSTEM_CALL    __attribute__( ( section( "freertos_system_calls" ) ) )
+        #define PRIVILEGED_FUNCTION     __attribute__ ((section( "privileged_functions" )))
+        #define PRIVILEGED_DATA         __attribute__ ((section( "privileged_data" )))
+        #define FREERTOS_SYSTEM_CALL    __attribute__ ((section( "freertos_system_calls" )))
 
     #endif /* MPU_WRAPPERS_INCLUDED_FROM_API_FILE */
 

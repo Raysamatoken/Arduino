@@ -1,5 +1,5 @@
 /*
- * FreeRTOS Kernel V10.4.6
+ * FreeRTOS Kernel V10.5.0
  * Copyright (C) 2021 Amazon.com, Inc. or its affiliates.  All Rights Reserved.
  *
  * SPDX-License-Identifier: MIT
@@ -44,7 +44,7 @@
 /* Start tasks with interrupts enabled. */
 #define portFLAGS_INT_ENABLED           ( (StackType_t) 0x80 )
 
-#if defined( portUSE_WDTO)
+#if defined( portUSE_WDTO )
     #define portSCHEDULER_ISR           WDT_vect
 
 #elif defined( portUSE_TIMER0 )
@@ -90,7 +90,7 @@ extern volatile TCB_t * volatile pxCurrentTCB;
     Updated to match avr-libc 2.0.0
 */
 
-#if defined( portUSE_WDTO)
+#if defined( portUSE_WDTO )
 
 static __inline__
 __attribute__ ((__always_inline__))
@@ -156,7 +156,7 @@ void wdt_interrupt_enable (const uint8_t value)
     Updated to match avr-libc 2.0.0
 */
 
-#if defined( portUSE_WDTO)
+#if defined( portUSE_WDTO )
 
 static __inline__
 __attribute__ ((__always_inline__))
@@ -629,10 +629,41 @@ BaseType_t xPortStartScheduler( void )
 
 void vPortEndScheduler( void )
 {
-	/* It is unlikely that the ATmega port will get stopped.  If required simply
+    /* It is unlikely that the ATmega port will get stopped.  If required simply
      * disable the tick interrupt here. */
 
     wdt_disable();      /* disable Watchdog Timer */
+}
+/*-----------------------------------------------------------*/
+
+    /*
+     * Choose which delay function to use.
+     * Arduino delay() is a millisecond granularity busy wait, that
+     * that breaks FreeRTOS. So its use is limited to less than one
+     * System Tick (portTICK_PERIOD_MS milliseconds).
+     * FreeRTOS vTaskDelay() is relies on the System Tick which here
+     * has a granularity of portTICK_PERIOD_MS milliseconds (15ms),
+     * with the remainder implemented as an Arduino delay().
+     */
+
+#ifdef delay
+#undef delay
+#endif
+
+extern void delay ( unsigned long ms );
+
+void vPortDelay( const uint32_t ms ) __attribute__ ((hot, flatten));
+void vPortDelay( const uint32_t ms )
+{
+    if ( ms < portTICK_PERIOD_MS )
+    {
+        delay( (unsigned long) (ms) );
+    }
+    else
+    {
+        vTaskDelay( (TickType_t) (ms) / portTICK_PERIOD_MS );
+        delay( (unsigned long) (ms - portTICK_PERIOD_MS) % portTICK_PERIOD_MS );
+    }
 }
 /*-----------------------------------------------------------*/
 
@@ -640,7 +671,7 @@ void vPortEndScheduler( void )
  * Manual context switch. The first thing we do is save the registers so we
  * can use a naked attribute.
  */
-void vPortYield( void ) __attribute__ ( ( hot, flatten, naked ) );
+void vPortYield( void ) __attribute__ ((hot, flatten, naked));
 void vPortYield( void )
 {
     portSAVE_CONTEXT();
@@ -655,8 +686,8 @@ void vPortYield( void )
  * Manual context switch callable from ISRs. The first thing we do is save
  * the registers so we can use a naked attribute.
  */
-void vPortYieldFromISR(void) __attribute__ ( ( hot, flatten, naked ) );
-void vPortYieldFromISR(void)
+void vPortYieldFromISR( void ) __attribute__ ((hot, flatten, naked));
+void vPortYieldFromISR( void )
 {
     portSAVE_CONTEXT();
     vTaskSwitchContext();
@@ -672,7 +703,7 @@ void vPortYieldFromISR(void)
  * difference from vPortYield() is the tick count is incremented as the
  * call comes from the tick ISR.
  */
-void vPortYieldFromTick( void ) __attribute__ ( ( hot, flatten, naked ) );
+void vPortYieldFromTick( void ) __attribute__ ((hot, flatten, naked));
 void vPortYieldFromTick( void )
 {
     portSAVE_CONTEXT();
@@ -687,7 +718,7 @@ void vPortYieldFromTick( void )
 }
 /*-----------------------------------------------------------*/
 
-#if defined(portUSE_WDTO)
+#if defined( portUSE_WDTO )
 /*
  * Setup WDT to generate a tick interrupt.
  */
@@ -700,7 +731,7 @@ void prvSetupTimerInterrupt( void )
     wdt_interrupt_enable( portUSE_WDTO );
 }
 
-#elif defined (portUSE_TIMER0)
+#elif defined( portUSE_TIMER0 )
 /*
  * Setup Timer0 compare match A to generate a tick interrupt.
  */
